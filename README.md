@@ -2,6 +2,14 @@
 
 Mesa de ayuda interna para incidentes del ERP de Cimbrados. Los usuarios crean solicitudes, el sistema las asigna al líder de su área y envía un aviso por Gmail. El estado y el historial permanecen visibles según el rol.
 
+## Estado de la primera entrega
+
+- Migración inicial aplicada al proyecto Supabase `mpmywnfjctvkvvljntev`; cinco tablas con RLS y funciones de negocio verificadas.
+- Edge Function `send-notifications` desplegada y activa. Todavía no enviará correos hasta configurar Gmail OAuth, el secreto del trabajo y la tarea programada.
+- Interfaz desplegada en producción en `https://resol-vamos-orcin.vercel.app`. El despliegue está listo, pero Vercel Authentication protege el sitio por ahora.
+- El proyecto Vercel aún no está conectado al repositorio GitHub. Los despliegues siguientes se hacen desde la CLI hasta que el propietario del repositorio habilite la integración de Vercel.
+- No se han creado usuarios ni áreas definitivas porque faltan los datos del brief.
+
 ## Tecnología
 
 Next.js 16, React 19, TypeScript, Supabase Auth/Postgres/Edge Functions y Gmail API. Vercel aloja la interfaz. La guía de alcance y decisiones está en [PLAN.md](PLAN.md).
