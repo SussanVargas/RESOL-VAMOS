@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     </section>
     <section className="login-form-panel">
       <div className="login-form-wrap">
-        <div className="mobile-logo"><Image src="/cimbrados-logo.jpg" alt="Cimbrados" width={230} height={70} priority /></div>
+        <div className="mobile-logo"><Image src="/cimbrados-logo.jpg" alt="Cimbrados" width={230} height={70} style={{ width: "auto", height: "auto", maxWidth: "100%" }} priority /></div>
         <div className="login-icon"><LockKeyhole size={25} strokeWidth={1.8} /></div>
         <div className="eyebrow">BIENVENIDO DE NUEVO</div>
         <h2>Ingresa a tu espacio</h2>
