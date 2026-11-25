@@ -20,7 +20,7 @@ Una persona de la empresa reporta un problema del ERP, selecciona su área y des
 
 | Capa | Elección | Responsabilidad |
 | --- | --- | --- |
-| Interfaz | Next.js con TypeScript, App Router, Tailwind CSS y componentes accesibles | Formularios, bandejas y detalle del caso en escritorio y móvil. |
+| Interfaz | Next.js con TypeScript, App Router, CSS propio y componentes accesibles | Formularios, bandejas y detalle del caso en escritorio y móvil. |
 | Despliegue web | Vercel conectado a este repositorio | Builds, previews y publicación. |
 | Identidad | Supabase Auth | Sesiones y usuarios internos. El método de entrada se confirma con el brief; propuesta inicial: cuentas invitadas, sin registro público. |
 | Datos | Supabase Postgres | Áreas, perfiles, casos, historial y avisos pendientes. Migraciones versionadas en Git. |
