@@ -1,50 +1,30 @@
 # ResolVamos
 
-Mesa de ayuda interna para incidentes del ERP de Cimbrados. Los usuarios crean solicitudes, el sistema las asigna al líder de su área y envía un aviso por Gmail. El estado y el historial permanecen visibles según el rol.
+Mesa de ayuda interna para incidentes del ERP de Cimbrados. Los empleados crean casos, un líder por área los atiende y recibe un aviso por correo Microsoft 365.
 
-## Estado de la primera entrega
+## Estado
 
-- Migración inicial aplicada al proyecto Supabase `mpmywnfjctvkvvljntev`; cinco tablas con RLS y funciones de negocio verificadas.
-- Edge Function `send-notifications` desplegada y activa. Todavía no enviará correos hasta configurar Gmail OAuth, el secreto del trabajo y la tarea programada.
-- Interfaz desplegada en producción en `https://resolvamos.vercel.app`, en el proyecto `sussan/resol.vamos`. El proyecto está conectado a GitHub y despliega la rama `main`.
-- Las variables `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` están configuradas en Production y Preview de ese proyecto. El framework se fija como Next.js en `vercel.json`.
-- No se han creado usuarios ni áreas definitivas porque faltan los datos del brief.
+- Interfaz Next.js 16/React 19 en `https://resolvamos.vercel.app`, proyecto Vercel `sussan/resol.vamos`.
+- Base de datos Supabase `mpmywnfjctvkvvljntev`, con RLS, casos, áreas, eventos y cola de avisos. Las migraciones `202611250001` y `202611250002` están aplicadas.
+- Acceso con Microsoft preparado en la aplicación. Falta registrar la app en Microsoft Entra y habilitar Azure en Supabase.
+- Función de correo adaptada a Microsoft Graph. Falta desplegar la nueva versión, configurar credenciales de Microsoft 365 y activar la tarea programada.
+- Todavía no hay usuarios, áreas ni destinatarios definitivos.
 
-## Tecnología
+La guía de configuración y las rutas exactas están en [docs/MICROSOFT_SETUP.md](docs/MICROSOFT_SETUP.md). El alcance inicial está en [PLAN.md](PLAN.md).
 
-Next.js 16, React 19, TypeScript, Supabase Auth/Postgres/Edge Functions y Gmail API. Vercel aloja la interfaz. La guía de alcance y decisiones está en [PLAN.md](PLAN.md).
+## Desarrollo
 
-## Desarrollo local
+1. `npm install`
+2. Copia `.env.example` a `.env`. Completa `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`. `SUPABASE_SECRET_KEY` se usa solo para tareas administrativas locales; nunca se sube a Git ni se configura en Vercel.
+3. `npm run dev` y abre `http://localhost:3000`.
+4. Para aplicar futuras migraciones: `npx supabase link --project-ref mpmywnfjctvkvvljntev` y `npx supabase db push --remote --yes`.
 
-1. Instala Node.js 20 o superior y ejecuta `npm install`.
-2. Crea `.env` a partir de `.env.example` y completa `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SECRET_KEY`. El archivo `.env` está excluido de Git. `APP_URL` es necesario para el enlace de los avisos.
-3. Aplica la migración `supabase/migrations/202611250001_initial.sql` al proyecto correcto. Con la CLI autenticada: `npx supabase link --project-ref <ref>` y después `npx supabase db push --remote --yes`. La CLI puede solicitar la contraseña de Postgres; no es la clave `SUPABASE_SECRET_KEY`.
-4. Ejecuta `npm run dev` y abre `http://localhost:3000`.
+## Puesta en marcha
 
-## Primera configuración
+Configura primero el acceso Microsoft y activa al primer administrador según la guía. Luego activa a los empleados, marca a los responsables como líderes y crea las áreas en **Configuración**. Una área sin líder activo no admite casos.
 
-1. Crea cuentas de prueba en Supabase Dashboard → Authentication → Users. Cada cuenta genera automáticamente su perfil.
-2. Asigna el primer administrador desde el SQL Editor (sustituye el correo):
+La creación del caso y del aviso pendiente ocurre en una sola transacción. La Edge Function `send-notifications` envía por Microsoft Graph y reintenta fallos hasta cinco veces. La plantilla de cron está en `supabase/ops/schedule-notifications.sql`; no la ejecutes hasta que los secretos Microsoft 365 estén listos.
 
-   ```sql
-   update public.profiles set role = 'admin' where email = 'admin@empresa.com';
-   ```
+## Verificación
 
-3. Entra con ese usuario. En **Configuración**, marca a los responsables como líderes y crea las áreas con su líder. El formulario no permite enviar casos a áreas sin responsable.
-4. Desactiva el registro público en Supabase Auth para que las cuentas las cree un administrador del proyecto. Configura un SMTP propio si usarás invitaciones o recuperación de contraseña por correo.
-
-## Avisos por Gmail
-
-La función `supabase/functions/send-notifications` procesa hasta 10 avisos por ejecución. Necesita los secretos `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_SENDER`, `APP_URL` y `NOTIFICATION_JOB_SECRET`. Usa una cuenta remitente institucional autorizada con el permiso OAuth `gmail.send`. La clave de servicio de Supabase llega a la función como `SUPABASE_SERVICE_ROLE_KEY` en el entorno alojado.
-
-Despliega con `npx supabase functions deploy send-notifications --no-verify-jwt`. Después configura una tarea cada minuto con la plantilla `supabase/ops/schedule-notifications.sql`, sustituyendo los marcadores por la URL real de la función y un secreto fuerte que coincida con `NOTIFICATION_JOB_SECRET`. Guarda el secreto real solo en Supabase Vault y en los secretos de la Edge Function; nunca en Git.
-
-La creación del caso y del aviso pendiente ocurre en una sola transacción. Si Gmail falla, el aviso se reintenta hasta cinco veces. El administrador puede ver los avisos fallidos en la pantalla de configuración. Un fallo de registro después de que Gmail haya aceptado el mensaje podría ocasionar un correo duplicado; el número de caso permite reconocerlo.
-
-## Vercel
-
-Conecta este repositorio a un proyecto Vercel con framework Next.js. Configura `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` para Preview y Production. Las acciones de usuario emplean la sesión Supabase y RLS; `SUPABASE_SECRET_KEY` **no se necesita en Vercel**. Mantén `APP_URL` en los secretos de la función con la URL pública final. Después de cada despliegue, comprueba el inicio de sesión, el enrutamiento por área, el cambio de estado y la entrega de un correo real.
-
-## Comprobaciones
-
-`npm run typecheck`, `npm run lint` y `npm run build` verifican la aplicación. Las políticas de RLS y la entrega de Gmail requieren pruebas contra un proyecto Supabase con cuentas de cada rol y una cuenta Gmail autorizada.
+`npm run typecheck`, `npm run lint` y `npm run build` verifican el código. La prueba completa requiere una cuenta Microsoft del tenant, un buzón remitente autorizado y un líder real por área. Un HTTP 202 de Microsoft Graph indica aceptación de la solicitud, no confirmación de entrega final.

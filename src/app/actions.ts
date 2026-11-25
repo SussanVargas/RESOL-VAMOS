@@ -1,12 +1,27 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, requireProfile } from "@/lib/auth";
 import type { Status } from "@/lib/types";
 
 function errorUrl(path: string, message: string) {
   return `${path}?error=${encodeURIComponent(message)}`;
+}
+
+export async function loginWithMicrosoft() {
+  const supabase = await createClient();
+  const headerStore = await headers();
+  const origin = headerStore.get("origin");
+  const appUrl = process.env.APP_URL ?? "https://resolvamos.vercel.app";
+  const redirectOrigin = origin === "http://localhost:3000" ? origin : appUrl.replace(/\/$/, "");
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "azure",
+    options: { scopes: "email", redirectTo: `${redirectOrigin}/auth/callback` },
+  });
+  if (error || !data.url) redirect(errorUrl("/login", "No pudimos conectar con Microsoft."));
+  redirect(data.url);
 }
 
 export async function login(formData: FormData) {
