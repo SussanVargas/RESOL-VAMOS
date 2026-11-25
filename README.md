@@ -6,8 +6,8 @@ Mesa de ayuda interna para incidentes del ERP de Cimbrados. Los usuarios crean s
 
 - Migración inicial aplicada al proyecto Supabase `mpmywnfjctvkvvljntev`; cinco tablas con RLS y funciones de negocio verificadas.
 - Edge Function `send-notifications` desplegada y activa. Todavía no enviará correos hasta configurar Gmail OAuth, el secreto del trabajo y la tarea programada.
-- Interfaz desplegada en producción en `https://resol-vamos-orcin.vercel.app`. El despliegue está listo, pero Vercel Authentication protege el sitio por ahora.
-- El proyecto Vercel aún no está conectado al repositorio GitHub. Los despliegues siguientes se hacen desde la CLI hasta que el propietario del repositorio habilite la integración de Vercel.
+- Interfaz desplegada en producción en `https://resolvamos.vercel.app`, en el proyecto `sussan/resol.vamos`. El proyecto está conectado a GitHub y despliega la rama `main`.
+- Las variables `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` están configuradas en Production y Preview de ese proyecto. El framework se fija como Next.js en `vercel.json`.
 - No se han creado usuarios ni áreas definitivas porque faltan los datos del brief.
 
 ## Tecnología
