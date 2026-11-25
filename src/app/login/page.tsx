@@ -1,13 +1,13 @@
 import Image from "next/image";
 import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
-import { login, loginWithMicrosoft } from "@/app/actions";
+import { login } from "@/app/actions";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) redirect("/");
+  if (user) redirect("/lider");
   const { error } = await searchParams;
   return <main className="login-shell">
     <section className="login-story">
@@ -26,12 +26,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="login-icon"><LockKeyhole size={25} strokeWidth={1.8} /></div>
         <div className="eyebrow">BIENVENIDO DE NUEVO</div>
         <h2>Ingresa a tu espacio</h2>
-        <p className="muted">Ingresa con tu cuenta Microsoft de la empresa.</p>
+        <p className="muted">Acceso exclusivo para responsables de área.</p>
         {error && <div className="alert error" role="alert">{error}</div>}
-        <form action={loginWithMicrosoft}>
-          <button className="button microsoft-button wide" type="submit"><span className="microsoft-mark" aria-hidden="true"><i /><i /><i /><i /></span> Continuar con Microsoft <ArrowRight size={18} /></button>
-        </form>
-        <div className="login-separator"><span>Acceso alternativo</span></div>
         <form action={login} className="form-stack">
           <label>Correo electrónico<input name="email" type="email" autoComplete="email" placeholder="tu@empresa.com" required /></label>
           <label>Contraseña<input name="password" type="password" autoComplete="current-password" placeholder="Tu contraseña" required /></label>

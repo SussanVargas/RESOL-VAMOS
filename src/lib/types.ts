@@ -19,8 +19,9 @@ export type Area = {
 export type Case = {
   id: string;
   number: number;
-  requester_id: string;
+  requester_id: string | null;
   requester_email: string;
+  requester_name: string;
   leader_id: string;
   area_id: string;
   subject: string;

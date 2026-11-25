@@ -2,26 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { createHmac } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireProfile } from "@/lib/auth";
 import type { Status } from "@/lib/types";
 
 function errorUrl(path: string, message: string) {
   return `${path}?error=${encodeURIComponent(message)}`;
-}
-
-export async function loginWithMicrosoft() {
-  const supabase = await createClient();
-  const headerStore = await headers();
-  const origin = headerStore.get("origin");
-  const appUrl = process.env.APP_URL ?? "https://resolvamos.vercel.app";
-  const redirectOrigin = origin === "http://localhost:3000" ? origin : appUrl.replace(/\/$/, "");
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "azure",
-    options: { scopes: "email", redirectTo: `${redirectOrigin}/auth/callback` },
-  });
-  if (error || !data.url) redirect(errorUrl("/login", "No pudimos conectar con Microsoft."));
-  redirect(data.url);
 }
 
 export async function login(formData: FormData) {
@@ -30,7 +18,26 @@ export async function login(formData: FormData) {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) redirect(errorUrl("/login", "No pudimos iniciar sesión. Revisa tus datos."));
-  redirect("/");
+  redirect("/lider");
+}
+
+export async function createPublicCase(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const area = String(formData.get("area") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  if (formData.get("website")) redirect("/recibido");
+  if (name.length < 2 || name.length > 100 || description.length < 15 || description.length > 5000 || !/^[0-9a-f-]{36}$/i.test(area)) {
+    redirect(errorUrl("/", "Escribe tu nombre, selecciona el área y cuéntanos qué ocurrió."));
+  }
+  const headerStore = await headers();
+  const ip = (headerStore.get("x-vercel-forwarded-for") ?? headerStore.get("x-forwarded-for") ?? "local").split(",")[0].trim();
+  const ipHash = createHmac("sha256", process.env.SUPABASE_SECRET_KEY!).update(ip).digest("hex");
+  const admin = createAdminClient();
+  const { data, error } = await admin.rpc("create_public_case", {
+    p_name: name, p_area_id: area, p_description: description, p_ip_hash: ipHash,
+  });
+  if (error || !data) redirect(errorUrl("/", error?.message?.includes("demasiadas") ? "Llegaron muchas solicitudes desde tu conexión. Inténtalo más tarde." : "No pudimos enviar tu solicitud. Inténtalo de nuevo."));
+  redirect(`/recibido?numero=${data}`);
 }
 
 export async function logout() {

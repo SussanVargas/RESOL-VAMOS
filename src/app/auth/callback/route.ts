@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(new URL("/", request.url));
+    if (!error) return NextResponse.redirect(new URL("/lider", request.url));
   }
   const url = new URL("/login", request.url);
   url.searchParams.set("error", "No pudimos completar el acceso con Microsoft.");

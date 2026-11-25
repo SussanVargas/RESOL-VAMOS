@@ -1,30 +1,31 @@
 # ResolVamos
 
-Mesa de ayuda interna para incidentes del ERP de Cimbrados. Los empleados crean casos, un líder por área los atiende y recibe un aviso por correo Microsoft 365.
+Mesa de ayuda ERP de Cimbrados. La portada pública permite enviar solicitudes sin cuenta: nombre, área y descripción. Contabilidad, Financiera y Costos tienen un responsable que ve sus casos al entrar con correo y contraseña. Incluye preguntas frecuentes y seguimiento de estado para líderes.
 
-## Estado
+## Rutas
 
-- Interfaz Next.js 16/React 19 en `https://resolvamos.vercel.app`, proyecto Vercel `sussan/resol.vamos`.
-- Base de datos Supabase `mpmywnfjctvkvvljntev`, con RLS, casos, áreas, eventos y cola de avisos. Las migraciones `202611250001` y `202611250002` están aplicadas.
-- Acceso con Microsoft preparado en la aplicación. Falta registrar la app en Microsoft Entra y habilitar Azure en Supabase.
-- Función de correo adaptada a Microsoft Graph. Falta desplegar la nueva versión, configurar credenciales de Microsoft 365 y activar la tarea programada.
-- Todavía no hay usuarios, áreas ni destinatarios definitivos.
+- `/`: formulario público.
+- `/preguntas-frecuentes`: ayuda sencilla para usuarios.
+- `/recibido`: confirmación con número de caso.
+- `/login`: acceso privado de responsables.
+- `/lider`, `/casos`, `/casos/[id]`: bandeja y detalle privados.
+- `/admin`: configuración de áreas y usuarios para administración.
 
-La guía de configuración y las rutas exactas están en [docs/MICROSOFT_SETUP.md](docs/MICROSOFT_SETUP.md). El alcance inicial está en [PLAN.md](PLAN.md).
+## Infraestructura
+
+- Vercel: `https://resolvamos.vercel.app`, proyecto `sussan/resol.vamos`.
+- Supabase: proyecto `mpmywnfjctvkvvljntev`, migraciones en `supabase/migrations`.
+- Los tres usuarios y sus áreas se cargaron el 25 de noviembre de 2026. La cuenta de Costos tiene rol administrador para gestionar accesos.
+- El formulario público usa una acción de servidor y una clave privada de Supabase almacenada solo en Vercel. Hay un límite de cinco envíos por conexión y hora, además de un campo trampa contra bots. La base de datos asigna cada caso al líder activo y crea un aviso pendiente.
+- **Avisos por email pendientes:** la bandeja privada ya recibe los casos. Para enviar además un correo automático se necesita un buzón remitente y permisos de Microsoft Graph u otro proveedor. La función de correo existente todavía no está configurada para enviar ni tiene cron activo. Consulta [docs/MICROSOFT_SETUP.md](docs/MICROSOFT_SETUP.md) si más adelante se habilita Microsoft 365.
 
 ## Desarrollo
 
-1. `npm install`
-2. Copia `.env.example` a `.env`. Completa `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY`. `SUPABASE_SECRET_KEY` se usa solo para tareas administrativas locales; nunca se sube a Git ni se configura en Vercel.
+1. `npm install`.
+2. Copia `.env.example` a `.env` y configura `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SECRET_KEY`. La clave privada se usa **solo en el servidor** y no se sube a Git.
 3. `npm run dev` y abre `http://localhost:3000`.
-4. Para aplicar futuras migraciones: `npx supabase link --project-ref mpmywnfjctvkvvljntev` y `npx supabase db push --remote --yes`.
-
-## Puesta en marcha
-
-Configura primero el acceso Microsoft y activa al primer administrador según la guía. Luego activa a los empleados, marca a los responsables como líderes y crea las áreas en **Configuración**. Una área sin líder activo no admite casos.
-
-La creación del caso y del aviso pendiente ocurre en una sola transacción. La Edge Function `send-notifications` envía por Microsoft Graph y reintenta fallos hasta cinco veces. La plantilla de cron está en `supabase/ops/schedule-notifications.sql`; no la ejecutes hasta que los secretos Microsoft 365 estén listos.
+4. Las migraciones se aplican con `npx supabase db push --remote --yes` tras enlazar el proyecto correcto.
 
 ## Verificación
 
-`npm run typecheck`, `npm run lint` y `npm run build` verifican el código. La prueba completa requiere una cuenta Microsoft del tenant, un buzón remitente autorizado y un líder real por área. Un HTTP 202 de Microsoft Graph indica aceptación de la solicitud, no confirmación de entrega final.
+`npm run typecheck`, `npm run lint`, `npm run build` y `npx supabase db lint --remote`. La prueba de enrutamiento creó un caso temporal para Contabilidad, verificó el destinatario y comprobó que Financiera no podía leerlo; el caso se eliminó al terminar.
